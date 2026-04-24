@@ -1,0 +1,27 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Actual portfolio data (never commit real holdings)
+portfolio.md
+!portfolio_structure/portfolio.md
+
+# Personal research reports
+research/*
+!research/.gitkeep
+full_reports/*
+!full_reports/.gitkeep
+sourcing/*
+!sourcing/.gitkeep
+reviews/*
+!reviews/.gitkeep
+
+# Temp files
+*.tmp
+*.log
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
