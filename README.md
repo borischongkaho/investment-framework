@@ -1,14 +1,31 @@
 # Investment Framework
 
-Personal investment analysis framework built on Claude Code skills. Implements the CUHK MBA ACCT6111E (Dr. Swaminathan) value investing methodology with systematic idea sourcing, quick screening, 8-phase full valuation, and portfolio monitoring.
+> **Version**: ACCT6111E v2.0 hardened (2026-05-03)
+> **Methodology**: CUHK MBA ACCT6111E (Dr. Bhaskaran Swaminathan)
+
+Personal investment analysis framework built on Claude Code skills. Implements systematic value investing with **forensic screening, validation gates, and binding recommendation caps**.
+
+---
+
+## ⚠️ v2.0 Hardening Notice
+
+**v2.0 fixes 7 critical bugs identified through real-world failures (ABBV over-bullish + FISV missed lawsuit)**.
+
+If you're upgrading from v1, see [`framework/change_log.md`](framework/change_log.md) for breaking changes.
+
+**Cross-validation testing**: Use the v2.0 test suite in `framework/ACCT6111E_v2_hardened.md` to verify any Claude instance produces consistent v2.0 output.
+
+---
 
 ## Philosophy
 
 - **20-30% margin of safety minimum** before deploying capital
-- **5+ year horizon**, durable moat preferred
-- **Numbers over narrative** — every thesis backed by DCF
-- **Three independent valuation methods** (EPV + DCF + Multiples) for cross-validation
-- **Systematic discipline** — 6-question gate before every buy decision
+- **Forensic screening mandatory** — no valuation without litigation/governance check
+- **Strict terminal formula** — `NOPAT × (1-g/ROI) / (WACC-g)`, no plain Gordon Growth
+- **Validation gates binding** — 7 mandatory checks before final output
+- **Recommendation caps non-negotiable** — red flags trigger automatic AVOID
+
+---
 
 ## Architecture
 
@@ -17,146 +34,144 @@ Personal investment analysis framework built on Claude Code skills. Implements t
       ↓
 [10-15 candidates]
       ↓
-[/invest-screen]     → 10-minute quick filter (6 filters)
+[/invest-screen]     → 10-min quick filter (6 filters + Phase 0.5 forensic)
       ↓
     GO / WATCHLIST / PASS
       ↓
-[/mba-valuation]     → Full 8-phase valuation (30-45 min)
+[/mba-valuation]     → Full v2.0 8-phase valuation (45 min)
+      ↓ Pass 7 validation gates → recommendation cap
+[portfolio.md]       → Source of truth
       ↓
-[portfolio.md]       → Source of truth for holdings, watchlist, exit triggers
+[/invest-portfolio]  → Weekly/monthly monitoring
       ↓
-[/invest-portfolio]  → Weekly/monthly monitoring, thesis re-validation
+[journal/]           → Continuous learning system
 ```
+
+---
+
+## v2.0 Critical Components
+
+### 1. Phase 0.5 — Forensic Screening (NEW)
+10 mandatory web searches before any valuation:
+- Securities class action / SEC / DOJ investigations
+- Accounting restatement / Going concern auditor
+- CEO/CFO change last 12 months
+- Guidance miss/cut / Earnings restatement
+- Latest quarterly results verification
+
+### 2. Default Assumptions Lock (NEW)
+- **D1: Terminal formula** — `NOPAT × (1-g/ROI)/(WACC-g)` ALWAYS
+- **D2: Terminal growth** — 2.5% default, 3.0% hard cap
+- **D3: WACC floors** — 7% large-cap / 8% mid / 9.5% small
+- **D4-D7**: Beta Blume adjustment, tax, NWC, forecast period
+
+### 3. 7 Validation Gates (NEW)
+1. Method convergence (max/min ratio)
+2. TV concentration (TV/EV)
+3. EPV sanity (EPV ≤ DCF)
+4. Reverse DCF plausibility (implied g)
+5. FCFF reconciliation (top-down vs bottom-up)
+6. Multiples cross-check
+7. MoS verification
+
+### 4. Recommendation Cap Table (NEW)
+Binding caps:
+- 🔴 Active fraud lawsuit → AVOID
+- 🟠 Multiple flags → HOLD max
+- MoS < 25% → cannot output BUY
+- MoS < 0% → AVOID/TRIM
+
+---
 
 ## Skills
 
-Four Claude Code skills work together:
-
-| Skill | Purpose | Duration |
+| Skill | Purpose | v2.0 Hardened? |
 |---|---|---|
-| **[invest-source](skills/invest-source/)** | Systematic idea sourcing across 9 channels (13F, insider buying, quality-at-lows, spin-offs, fallen angels, activist 13D, event calendar) | Monthly scan |
-| **[invest-screen](skills/invest-screen/)** | 10-minute quick filter with 6-filter framework + NVO/BMY lesson gate (6 discipline rules) | 10 min per candidate |
-| **[mba-valuation](skills/mba-valuation/)** | Full 8-phase valuation (EPV / DCF / Multiples / Proforma / 3-Stage) with sensitivity analysis | 30-45 min per stock |
-| **[invest-portfolio](skills/invest-portfolio/)** | Portfolio monitoring, news checks, thesis re-validation, weekly/monthly reviews | Scheduled |
+| [invest-source](skills/invest-source/) | 9-channel systematic sourcing | ✅ |
+| [invest-screen](skills/invest-screen/) | 6-filter + forensic screen | ✅ |
+| [mba-valuation](skills/mba-valuation/) | Full 8-phase + 7 validation gates | ✅ |
+| [invest-portfolio](skills/invest-portfolio/) | Weekly/monthly monitoring with v2.0 cap | ✅ |
 
-## 9 Sourcing Channels
-
-**Tier 1 — High signal (monthly)**
-1. Superinvestor 13F new positions (Berkshire, Pershing Square, Baupost, Appaloosa, etc.)
-2. 13F conviction sizing (% increases)
-3. 13F + insider buying overlap
-4. Spin-off tracking (mechanical mispricing)
-
-**Tier 2 — Medium signal (quarterly)**
-5. Activist 13D filings (Elliott, Starboard, Third Point)
-6. Fallen angel credit downgrades
-7. Quality-at-52-week-lows
-
-**Tier 3 — Forward-looking (ad-hoc)**
-8. Event calendar anticipation
-
-**Tier 4 — Reactive (event-driven)**
-9. Post-earnings drops > 10% on quality names
-
-## 6-Filter Screening Framework
-
-Every candidate gets filtered through:
-1. **Market Cap & Liquidity** — avoid micro-caps and illiquid names
-2. **Business Understandability** — Warren Buffett "within circle of competence" test
-3. **Financial Health** — Debt/Equity, Interest Coverage, Current Ratio, FCF, ROIC, Revenue trend
-4. **Red Flags** — fads, serial acquirers, accounting shenanigans, excessive leverage, management red flags
-5. **Valuation Quick Gauge** — P/E, EV/EBITDA, P/FCF vs history and peers
-6. **Moat / Competitive Position** — network effects, switching costs, scale, brand
-
-Plus **Filter 4B**: NVO/BMY Lesson Gate (6 hard rules learned from past mistakes).
-
-## 8-Phase Full Valuation
-
-Based on CUHK MBA ACCT6111E (Dr. Swaminathan). Each phase is documented in [skills/mba-valuation/](skills/mba-valuation/):
-
-| Phase | Purpose |
-|---|---|
-| 0 | Scope + data gathering |
-| 1 | Historical financial analysis (5yr FCFF, ROIC, Du Pont) |
-| 2 | Competitive position (Lynch lifecycle, Porter 5 Forces, Moat) |
-| 3 | Cost of capital (CAPM, Beta, WACC) |
-| 4 | Multi-method valuation (EPV / DCF / Multiples / EVA / 3-Stage) |
-| 5 | Sensitivity + scenarios (Bull / Base / Bear) |
-| 6 | Investment decision (P/V ratio, margin of safety, 6-question gate) |
-| 7 | Behavioral bias check |
-| 8 | Output report (standardized format + PDF) |
-
-## Portfolio Structure
-
-See [portfolio_structure/](portfolio_structure/) for the folder layout:
-
-```
-portfolio_structure/
-├── portfolio.md              # Source of truth: holdings, watchlist, exit triggers
-├── research/
-│   ├── full_reports/         # 8-phase valuation reports (markdown + PDF)
-│   └── *.md                  # Quick memos, thesis notes
-├── sourcing/                 # Idea sourcing reports (YYYY-MM-DD_sourcing.md)
-└── reviews/                  # Weekly / monthly portfolio reviews
-```
-
-## 6-Question Discipline Gate
-
-From painful past mistakes (NVO / BMY post-mortem), every candidate MUST pass:
-
-1. **Moat has expiry date?** — Patent cliff, license expiry, contract expiry
-2. **ROIC-WACC spread > 2%?** — Growth must create excess value
-3. **Dividend yield > 4%?** — Yield trap red flag, check FCF payout ratio
-4. **Net Debt > 50% of Market Cap?** — Debt-heavy compresses equity value
-5. **Thesis has numbers support?** — Narrative-only thesis is red flag
-6. **"Would I buy today?"** — If answer is No, don't hold
+---
 
 ## Setup
 
 1. Clone this repo
-2. Copy the skill folders from `skills/` into your `~/.claude/skills/` directory
-3. Create your personal portfolio directory (e.g., `~/Developer/investment/`)
-4. Copy `portfolio_structure/portfolio.md` as your starting template — fill in your actual holdings
-5. Invoke skills from Claude Code:
-   - `/invest-source` — monthly idea scan
-   - `/invest-screen TICKER` — quick filter
-   - `/mba-valuation TICKER` — full 8-phase valuation
-   - `/invest-portfolio` — portfolio review
-
-## Output Format (every valuation)
-
-All deliverables follow a standard decision format:
-
-```
-📊 估值結果 (table: EPV / DCF / Multiples / Weighted)
-🎯 三層解釋 (1 sentence → business impact → daily analogy)
-🧭 投資選項 A / B / C (with trade-offs)
-✅ 建議 (with rationale)
-⚠️ Red flags
-🧠 Framework used (MBA lecture / reference case)
-📋 Exit triggers (to monitor)
-```
-
-## Reference Cases
-
-The framework references specific historical cases to calibrate judgments:
-- **Apple 2013** — quality at temporary discount
-- **SJM** — EPV zero-growth floor
-- **MEMC** — capex cycle bust
-- **TER** — distressed turnaround
-- **Moody's** — duopoly network moat
-- **ITW** — high-quality compounder temporarily depressed
-
-## Credits
-
-- Methodology: CUHK MBA ACCT6111E, Dr. Bhaskaran Swaminathan
-- Implementation: Built with [Claude Code](https://claude.com/claude-code) skills
-- Personal use — shared as reference for others building similar systematic frameworks
-
-## License
-
-MIT — feel free to adapt for your own investing workflow.
+2. Copy skill folders to your `~/.claude/skills/`
+3. Create your personal portfolio dir (e.g., `~/Developer/investment/`)
+4. Copy `portfolio_structure/portfolio.md` as starting template
+5. (Optional) Setup Gmail API for report email delivery — see `skills/mba-valuation/scripts/`
 
 ---
 
-**This is a framework repository.** Actual portfolio data, research reports with specific stock analyses, and personal investment decisions are NOT included. Build your own portfolio.md based on the template, run the skills, and develop your own positions.
+## Cross-Validation Protocol
+
+To verify your Claude instance correctly applies v2.0:
+
+1. Run `/mba-valuation FISV current_price 62` → should detect Cypanga Sicav lawsuit and trigger AVOID
+2. Run `/mba-valuation ABBV current_price 203` → should produce $185-210 intrinsic, HOLD
+3. Run `/mba-valuation GIS current_price 35` → should produce reasonable BORDERLINE BUY (no false AVOID)
+
+If any test fails, framework v2.0 is not properly implemented.
+
+---
+
+## Folder Structure
+
+```
+investment-framework/
+├── README.md                        # This file
+├── framework/
+│   ├── ACCT6111E_v2_hardened.md     # Main framework v2.0
+│   └── change_log.md                # v1 → v2 evolution
+├── journal/
+│   └── templates/                   # Decision log, post-mortem, thesis journal
+│       ├── decision_log_template.md
+│       ├── post_mortem_template.md
+│       └── thesis_journal_template.md
+├── skills/
+│   ├── invest-source/               # 9-channel sourcing
+│   ├── invest-screen/               # 6-filter screening
+│   ├── mba-valuation/               # Full 8-phase + email integration
+│   └── invest-portfolio/            # Monitoring
+└── portfolio_structure/
+    └── portfolio.md                 # Empty template
+```
+
+---
+
+## What's NOT Included
+
+- ❌ Personal portfolio data (use `portfolio.md` template)
+- ❌ Specific stock valuation reports (build your own)
+- ❌ Personal credentials (Gmail OAuth setup required separately)
+- ❌ Trading P/L records
+
+---
+
+## Continuous Improvement
+
+The framework is designed to evolve. Key principles:
+- Document every decision (use journal templates)
+- Post-mortem after every exit
+- Update framework when patterns emerge
+- Cross-validate between Claude instances regularly
+
+---
+
+## Credits
+
+- **Methodology**: CUHK MBA ACCT6111E, Dr. Bhaskaran Swaminathan
+- **Implementation**: Built with [Claude Code](https://claude.com/claude-code) skills
+- **v2.0 Hardening**: Based on cross-validation between Claude instances
+
+---
+
+## License
+
+MIT — adapt freely for your own investing workflow.
+
+---
+
+**Last updated**: 2026-05-03
+**Framework version**: ACCT6111E v2.0 hardened

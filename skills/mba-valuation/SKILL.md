@@ -56,6 +56,7 @@ description: Boris 嘅企業估值顧問，跟 CUHK MBA ACCT6111E (Dr. Swaminath
 | Phase | 目標 | 詳見 |
 |---|---|---|
 | 0 | Scope + data gathering | 上面 |
+| **0.5** | **Business Overview（Boris 通俗版）** | 必須包括 4 個 component（見下） |
 | 1 | Historical financial analysis（FCFF、ROIC、Du Pont） | `sop.md` §1 |
 | 2 | Competitive position（Lynch lifecycle、Porter 5 Forces、Moat） | `sop.md` §2 |
 | 3 | Cost of capital（CAPM、Beta、WACC） | `sop.md` §3 + `methodology.md` |
@@ -64,6 +65,73 @@ description: Boris 嘅企業估值顧問，跟 CUHK MBA ACCT6111E (Dr. Swaminath
 | 6 | Investment decision（P/V ratio、margin of safety、6 questions） | `checklist.md` |
 | 7 | Behavioral bias check | `checklist.md` |
 | 8 | Output report（Boris 標準格式） | 下面 |
+
+## 🆕 Phase 0.5：Business Overview（強制包含）
+
+**呢個 section 必須喺報告最頂（Executive Summary 後面），用通俗中文講畀 Boris**：
+
+```markdown
+## 🏢 Business Overview（Boris 通俗版）
+
+### 間公司做咩？（30 秒理解）
+> [一段話，避免 jargon。用 Boris 識嘅 reference 解釋。例：'好似你信任嘅基金經理，但只服務 institution']
+
+### N 個業務板塊
+| Segment | 做咩 | 重要性 |
+
+### 🛡️ 護城河（Moat）
+**N 層 deep moat**：
+1. [最關鍵 moat] — 點解唔換、唔復制
+2. ...
+**Moat Rating**: 🟢🟢🟢 Wide / 🟢🟢 Narrow / 🟡 Limited
+
+### 🎯 投資 Thesis（為什麼買）
+**Core Thesis（一句話）**: [濃縮 thesis]
+**3 個支撐點**：
+1. ✅ ...
+
+### ⚠️ 風險（Risks）
+**唔可以忽視嘅 N 個 risk**：
+1. **Risk 1** ⚠️
+   - [描述]
+   - **Counter**：[mitigation]
+2. ...
+
+### 📊 Reference Analogy（比喻）
+**好似**：[類似 case 同點解 similar]
+**唔似**：[反 case，避免 false comparison]
+```
+
+呢個 section 嘅目的：**Boris 5 分鐘讀完就明 business + thesis + risk**，唔需要先讀 Phase 1-8 數字。
+
+## 📧 Email Delivery（每次 valuation 完成必須執行）
+
+完成 PDF 生成後，**自動 email 畀 Boris**：
+
+```bash
+/Users/borischong/.claude/skills/mba-valuation/scripts/email_report.sh \
+  "<absolute_path_to_pdf>" \
+  "<TICKER (Company Name)>" \
+  "<YYYY-MM-DD>" \
+  "<intrinsic_value>" \
+  "<MoS_with_sign>" \
+  "<recommendation_short>"
+```
+
+**Example**：
+```bash
+/Users/borischong/.claude/skills/mba-valuation/scripts/email_report.sh \
+  "/Users/borischong/Developer/investment/research/full_reports/CRM_2026-04-28_full.pdf" \
+  "CRM (Salesforce)" \
+  "2026-04-28" \
+  "285" \
+  "+35%" \
+  "STRONG BUY"
+```
+
+Email 會 send 到 josepspain852@gmail.com 帶 PDF attachment。
+
+如果 email script fail（e.g. Mail.app 唔開），只 log warning 唔 abort report。
 
 ## Boris 標準輸出格式
 

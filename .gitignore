@@ -2,7 +2,7 @@
 .DS_Store
 Thumbs.db
 
-# Actual portfolio data (never commit real holdings)
+# Actual portfolio data (NEVER commit real holdings)
 portfolio.md
 !portfolio_structure/portfolio.md
 
@@ -16,12 +16,25 @@ sourcing/*
 reviews/*
 !reviews/.gitkeep
 
-# Temp files
+# Personal journal entries (templates only in repo)
+journal/decision_log.md
+journal/lessons_learned.md
+journal/framework_evolution.md
+journal/monthly_review.md
+journal/framework_bugs_log.md
+journal/post_mortems/*
+journal/thesis_journals/*
+
+# Gmail OAuth credentials (NEVER commit)
+**/credentials.json
+**/token.json
+**/.env
+**/.env.local
+
+# Temp / build files
 *.tmp
 *.log
 __pycache__/
 *.pyc
-
-# IDE
 .vscode/
 .idea/
