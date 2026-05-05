@@ -92,3 +92,37 @@ The course Excel uses:
 - Discrepancy Resolution Protocol (NEW)
 
 These are **enhancements on top of course-faithful base**, not deviations from course methodology.
+
+
+---
+
+## 2026-05-05 — v3.0 Rules Trigger（FISV Post-Mortem）
+
+### Real-World Validation of v2.0
+
+FISV trade（2026-04-14 buy → 2026-05-04 trim → 2026-05-05 Q1 confirm）provided **first real-world validation of v2.0 framework hardening**:
+
+- V1 framework missed Cypanga Sicav v. Fiserv lawsuit (resulting in over-bullish BUY thesis at $58.86)
+- V2.0 Phase 0.5 forensic screening caught it on re-run (5/4)
+- Trim executed 5/4 @ $63 → realized +$972.90 (+7.03%)
+- 5/5 Q1 announce: -7.4% drop to $58.16 → avoided -$1,137.40 vs hold-through
+- **Total framework value-add: $2,110.30 on single trade**
+
+### v3.0 Framework Updates Triggered
+
+Based on FISV post-mortem (see investor's private journal/post_mortems/FISV_2026-05-05.md):
+
+| # | Rule Add | Phase |
+|---|---|---|
+| 1 | GAAP vs Non-GAAP gap > 30% sustained = quality flag, haircut intrinsic 15% | Phase 1 |
+| 2 | Organic revenue YoY < 0 for 2+ consecutive quarters = auto-AVOID | Phase 1 |
+| 3 | Superinvestor signal weighting cap 20% | Phase 7 |
+| 4 | Pre-mortem mandatory @ entry day (3 reasons + monitoring triggers) | Phase 6.5 |
+| 5 | Position size cap 8-12% per single stock regardless of conviction | Phase 7 |
+| 6 | Mauboussin S&P 1500 base rate cross-check on Stage 1 growth | Phase 4 |
+| 7 | Forensic re-screen trigger → action within 72 hours | Phase 0.5 ext |
+
+### Status: Pending v3.0 Documentation
+
+These 7 rules will be merged into ACCT6111E_v3_hardened.md upon next major framework revision. Currently logged in investor's lessons_learned.md.
+
