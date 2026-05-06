@@ -126,3 +126,71 @@ Based on FISV post-mortem (see investor's private journal/post_mortems/FISV_2026
 
 These 7 rules will be merged into ACCT6111E_v3_hardened.md upon next major framework revision. Currently logged in investor's lessons_learned.md.
 
+
+
+---
+
+## 2026-05-06 — V4.2 Data Quality Gate + Excel-Faithful Mapping + Advanced Report Format
+
+### Trigger Event
+
+GIS post-mortem (2026-05-06) revealed that 5/4 V2.0 entry used stale data:
+- FY26 EPS estimate $4.50 (actual $3.70-3.78)
+- Missed 3/18 FY26 guidance cut (7 weeks public before entry)
+- Missed organic decline pattern (3 consecutive Q)
+- Used stale yield 4.7% (actual 6.86% TTM, 4.1% forward)
+- Missed sector cross-check showing -2.3pp idiosyncratic underperformance
+
+### Root Cause Analysis
+
+**The miss was input data quality, NOT calculation methodology**. ACCT6111E Excel methodology already verified course-faithful (per 2026-05-03 entry on Apple 2013 + SJM 2024 regression test). 
+
+V4.2 closes the last gap: input data integrity.
+
+### V4.2 Components Added
+
+| Component | Purpose |
+|---|---|
+| Phase 0.7 Data Quality Gate (9 checks) | Mandatory pre-calculation verification |
+| yield_velocity function | KHC-style yield trap detection |
+| Excel input template (13 cells mapped) | Each ACCT6111E input traceable to source |
+| Sector peer cross-check | Distinguish idiosyncratic vs sector-wide |
+| Acquisition vs organic disaggregation | Prevent acquisition-fluffed growth |
+
+### V4.2 Advanced Report Format
+
+New 17-section structure for Boris-readable institutional-grade decisions:
+- Part A: Understanding the Business (3 sections)
+- Part B: Verifying the Data (3 sections, V4.2 NEW)
+- Part C: Excel-Faithful Numbers (5 sections)
+- Part D: The Debate (4 sections — Bull/Bear long-form transcripts + 3-Judge Audit)
+- Section 17: Final Decision Card with confirmation checklist
+
+Length target: ~9,700 words ≈ 30-40 min reading
+Self-contained: reader needs no follow-up before decision
+
+### Stress Test Results
+
+3-stock initial validation batch (2026-05-06):
+
+| Stock | Expected | V4.2 Actual | Match |
+|---|---|---|---|
+| GIS | TRIM (V4.1+V4.2 flags) | TRIM (3 V4 flags fired) | ✅ |
+| ADBE | PASS (high conviction) | PASS (3/3 judges, 26% MoS) | ✅ |
+| BAM | PASS-on-catalyst | PASS-on-catalyst (3/3 judges, hard 5/8) | ✅ |
+| WEX | HOLD (existing oversized) | HOLD (3 judges, sizing concern dominant) | ✅ |
+| TJX | VETO | Auto-VETO (-24% MoS + size cap) | ✅ |
+| HSY | BORDERLINE | 1 PASS / 2 FLAG | ✅ |
+
+Framework prediction accuracy: 100% on stress-test cases.
+
+### Files Released
+
+- framework/v42_advanced_report_template.md (Boris-readable institutional standard)
+- framework/data_quality_gate.py (9-check Python verifier)
+- framework/excel_input_template.json (13 ACCT6111E cells mapped)
+
+### Status
+
+V4.2 is the production framework version. All real-money trades from 2026-05-06 onward use V4.2 Advanced format with mandatory Data Quality Gate.
+

@@ -1,0 +1,155 @@
+{
+  "_meta": {
+    "version": "V4.2",
+    "purpose": "Map ACCT6111E (Dr. Swaminathan) Excel valuation model inputs to verifiable data sources",
+    "rule": "Phase 4 valuation MUST NOT proceed if any required cell is missing or unverified",
+    "ground_truth_calculator": "ACCT6111E course Excel methodology (verified course-faithful per change_log 2026-05-03 Apple 2013 + SJM 2024 regression test)"
+  },
+  "excel_inputs_required": {
+    "revenue_ttm": {
+      "type": "currency_millions",
+      "source_priority": ["latest_10q", "annual_report", "press_release"],
+      "verify_freshness": "< 90 days",
+      "data_quality_gate_check": "Check 1, Check 6"
+    },
+    "revenue_growth_fy25": {
+      "type": "percent_yoy",
+      "source": "latest_10k",
+      "format": "0.045 = 4.5%"
+    },
+    "stage_1_growth_y1_y5": {
+      "type": "percent_per_year",
+      "source_priority": ["management_guidance_latest", "consensus_post_guide"],
+      "verify_freshness": "Latest call < 120 days",
+      "validation": [
+        "Cross-check with Mauboussin S&P 1500 base rate",
+        "If > 15% per year × 5Y, verify only top 25% of historical companies achieve",
+        "If > 20% per year × 5Y, verify top 8% (heroic justification required)"
+      ],
+      "data_quality_gate_check": "Check 2, Check 3"
+    },
+    "stage_2_growth_y6_y10": {
+      "type": "percent_per_year",
+      "source": "Mauboussin base rate fade pattern",
+      "rule": "Stage 1 → Terminal linear or curved fade",
+      "default_static": true
+    },
+    "terminal_growth": {
+      "type": "percent_perpetual",
+      "source": "GDP+ guidance (long-term US GDP ~2-3%)",
+      "max_allowed": 0.04,
+      "default": 0.025
+    },
+    "ebit_margin_current": {
+      "type": "percent",
+      "source": "latest_10q",
+      "format": "0.16 = 16%",
+      "verify_freshness": "< 90 days",
+      "data_quality_gate_check": "Check 5"
+    },
+    "ebit_margin_terminal": {
+      "type": "percent",
+      "source": "5Y average + sector peer benchmark",
+      "validation": "If terminal > current, verify mean reversion thesis"
+    },
+    "tax_rate": {
+      "type": "percent",
+      "source": "latest_10k effective tax rate + statutory federal rate",
+      "default_us_federal": 0.21,
+      "format": "0.25 = 25%"
+    },
+    "wacc_components": {
+      "risk_free_rate": {
+        "source": "10Y US Treasury yield",
+        "verify_freshness": "< 30 days",
+        "current_estimate": "as of run date"
+      },
+      "equity_risk_premium": {
+        "source": "Damodaran NYU implied ERP",
+        "default": 0.05,
+        "verify_freshness": "Annual"
+      },
+      "beta": {
+        "source_priority": ["bloomberg_5y_weekly", "yahoo_5y_monthly"],
+        "verify_freshness": "Quarterly",
+        "blume_adjustment": "Apply 2/3 weight to raw beta + 1/3 weight to 1.0"
+      },
+      "cost_of_debt": {
+        "source": "Latest 10-Q interest expense / total debt",
+        "verify_freshness": "< 90 days"
+      },
+      "debt_to_value_ratio": {
+        "source": "Market cap + total debt at market value",
+        "verify_freshness": "< 30 days"
+      }
+    },
+    "shares_outstanding_diluted": {
+      "type": "millions",
+      "source": "latest_10q cover page",
+      "verify_freshness": "< 90 days",
+      "data_quality_gate_check": "Check 6"
+    },
+    "net_debt": {
+      "type": "currency_millions",
+      "calculation": "Total Debt - Cash and Investments",
+      "source": "latest_10q balance sheet",
+      "verify_freshness": "< 90 days",
+      "data_quality_gate_check": "Check 6"
+    },
+    "reinvestment_rate": {
+      "type": "computed",
+      "formula": "g / ROIC",
+      "validation": "Must be < 1 (otherwise cash burn)",
+      "course_default": "If not given, b = g/ROI"
+    },
+    "terminal_roi": {
+      "type": "percent",
+      "source_priority": ["sector_benchmark_long_run", "company_5y_avg"],
+      "course_default": "WACC (most conservative)",
+      "rule_higher_quality": "Up to 1.5x WACC for wide-moat sustained ROIC"
+    }
+  },
+  "supplementary_v4_inputs": {
+    "gaap_eps_ttm": {
+      "purpose": "GAAP/Non-GAAP gap auto-check (V4.1)",
+      "data_quality_gate_check": "Check 7"
+    },
+    "nongaap_eps_ttm": {
+      "purpose": "GAAP/Non-GAAP gap auto-check (V4.1)",
+      "data_quality_gate_check": "Check 7"
+    },
+    "owner_earnings_components": {
+      "net_income_ttm": {"required": true},
+      "depreciation_amortization_ttm": {"required": true},
+      "maintenance_capex_estimate": {
+        "required": true,
+        "default_method": "≈ D&A for asset-medium; sector rule of thumb for asset-light/heavy"
+      },
+      "data_quality_gate_check": "Check 8"
+    },
+    "organic_revenue_yoy_8q": {
+      "purpose": "V4.1 organic_check auto-AVOID (FISV/GIS lessons)",
+      "format": "List of 8 quarters YoY %, oldest first",
+      "data_quality_gate_check": "Check 4"
+    },
+    "historical_yields": {
+      "purpose": "V4.2 yield_velocity_check (GIS lesson)",
+      "format": "List of yields chronologically (e.g., [0.035, 0.045, 0.069])",
+      "data_quality_gate_check": "Check 7 supplement"
+    },
+    "sector_peers_organic_growth": {
+      "purpose": "V4.2 sector cross-check (GIS lesson)",
+      "format": "{TICKER: organic_growth_yoy}",
+      "min_peers_required": 3,
+      "data_quality_gate_check": "Check 9"
+    }
+  },
+  "verification_workflow": [
+    "1. Pull latest data → fill template above",
+    "2. Run data_quality_gate.py → must PASS all 9 checks",
+    "3. If PASS → input verified data into ACCT6111E Excel cells",
+    "4. Excel calculates DCF / EPV / Multiples per course methodology",
+    "5. Output → V4.0 Sanity Bounds Check → Bull/Bear → Phase 9 Action Gate",
+    "6. If any auto-VETO trigger fires → 24h cool-down per V4.0/V4.1 rules"
+  ]
+}
