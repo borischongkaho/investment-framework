@@ -194,3 +194,43 @@ Framework prediction accuracy: 100% on stress-test cases.
 
 V4.2 is the production framework version. All real-money trades from 2026-05-06 onward use V4.2 Advanced format with mandatory Data Quality Gate.
 
+
+
+---
+
+## 2026-05-07 — Price Trigger Discipline Case Study
+
+### Trigger Event
+
+V4.2 framework user holds existing position in mid-cap quality stock. Stock dropped 3.5% in 2 days with zero fundamental change. MoS improved from 27% to 29%, reverse DCF showed -15.8% implied perpetual decline (severe distress pricing).
+
+### Question Tested
+
+Should user add to position at lower price given improved MoS?
+
+### Framework Verdict
+
+🔴 **HOLD — DO NOT ADD**
+
+Despite improved MoS and more attractive reverse DCF expectation gap:
+- V4.1 position size auto-VETO triggered (concentration > Tier 2 cap)
+- Pre-committed add zone NOT yet hit
+- Capital opportunity cost analysis favors diversification
+- Average-down temptation = sunk cost fallacy
+
+### Validation Outcome
+
+3-Judge Audit: 0 PASS / 3 HOLD / 0 VETO (84% avg confidence)
+
+V4.2 framework demonstrated working as designed:
+- Phase 0.7 DQG re-run cleanly (no false positive)
+- V4.1 auto-VETO binding regardless of other favorable factors
+- Pre-committed triggers honored over emotional override
+- Bull/Bear debate Bear-dominant on concentration pillar
+
+### Lesson Codified
+
+Price drop without fundamental change = noise, not signal. Symmetric discipline: no chase up, no chase down. Pre-committed triggers only.
+
+Case study published: `journal/case_studies/price_trigger_discipline.md`
+
