@@ -163,6 +163,134 @@ def dcf_three_stage(
 
 
 # -----------------------------------------------------------------------------
+# DCF Three-Stage — COURSE-STRICT (ACCT6111E Dr. Swaminathan)
+# Terminal: NOPAT × (1 - g/ROI) / (WACC - g)
+# -----------------------------------------------------------------------------
+def dcf_three_stage_course_strict(
+    nopat_year1: float,
+    growth_high: float,
+    years_high: int,
+    growth_mid: float,
+    years_mid: int,
+    growth_terminal: float,
+    wacc: float,
+    terminal_roi: float,
+    shares_outstanding: float,
+    net_debt: float = 0.0,
+    roi_stage1: float = None,
+    roi_stage2: float = None,
+) -> dict:
+    """
+    Three-stage DCF using ACCT6111E course-strict terminal formula.
+
+    KEY DIFFERENCE FROM PLAIN GORDON:
+        Plain Gordon:  TV = FCF × (1+g) / (WACC - g)
+        Course-Strict: TV = NOPAT × (1 - g/ROI) / (WACC - g)
+
+    Course version explicitly accounts for terminal reinvestment rate b = g/ROI.
+    Required when modeling compounders where terminal ROI > WACC (sustained moat).
+
+    Inputs:
+        nopat_year1: NOPAT (gross of reinvestment), millions
+        growth_high, years_high: Stage 1 growth rate + duration
+        growth_mid, years_mid: Stage 2 transition rate + duration
+        growth_terminal: perpetual growth rate
+        wacc: discount rate
+        terminal_roi: terminal Return On Invested Capital
+                     (course default: ROI = WACC for conservative)
+        shares_outstanding: diluted shares, millions
+        net_debt: total debt - cash, millions
+        roi_stage1: explicit period ROI for Stage 1 (default: terminal_roi + 5%)
+        roi_stage2: ROI fading toward terminal (default: between Stage1 + terminal)
+
+    Returns same dict structure as dcf_three_stage().
+    """
+    if wacc <= growth_terminal:
+        raise ValueError(
+            f"WACC ({wacc:.2%}) must be > terminal growth ({growth_terminal:.2%})"
+        )
+    if terminal_roi <= 0:
+        raise ValueError("terminal_roi must be positive")
+    if growth_terminal > terminal_roi:
+        raise ValueError(
+            f"terminal_growth ({growth_terminal:.2%}) cannot exceed terminal_roi ({terminal_roi:.2%}). "
+            "Reinvestment b = g/ROI would exceed 100%."
+        )
+
+    # Default ROI assumptions if not provided
+    if roi_stage1 is None:
+        roi_stage1 = max(wacc + 0.05, terminal_roi + 0.05)
+    if roi_stage2 is None:
+        roi_stage2 = max(wacc + 0.02, terminal_roi)
+
+    pv_fcf = []
+    nopat = nopat_year1
+
+    # Stage 1 — high growth
+    for year in range(1, years_high + 1):
+        if year > 1:
+            nopat = nopat * (1 + growth_high)
+        b_stage1 = growth_high / roi_stage1
+        fcf = nopat * (1 - b_stage1)
+        pv = fcf / ((1 + wacc) ** year)
+        pv_fcf.append({
+            "year": year, "stage": "high", "nopat": nopat,
+            "b": b_stage1, "fcf": fcf, "pv": pv,
+        })
+
+    # Stage 2 — transition
+    for year in range(years_high + 1, years_high + years_mid + 1):
+        nopat = nopat * (1 + growth_mid)
+        b_stage2 = growth_mid / roi_stage2
+        fcf = nopat * (1 - b_stage2)
+        pv = fcf / ((1 + wacc) ** year)
+        pv_fcf.append({
+            "year": year, "stage": "mid", "nopat": nopat,
+            "b": b_stage2, "fcf": fcf, "pv": pv,
+        })
+
+    # Terminal — COURSE-STRICT formula
+    # TV = NOPAT(t+1) × (1 - g/ROI_terminal) / (WACC - g)
+    last_year = years_high + years_mid
+    nopat_terminal = nopat * (1 + growth_terminal)
+    b_terminal = growth_terminal / terminal_roi
+    fcf_terminal = nopat_terminal * (1 - b_terminal)
+    terminal_value = fcf_terminal / (wacc - growth_terminal)
+    pv_terminal = terminal_value / ((1 + wacc) ** last_year)
+
+    sum_pv_explicit = sum(p["pv"] for p in pv_fcf)
+    enterprise_value = sum_pv_explicit + pv_terminal
+    equity_value = enterprise_value - net_debt
+    iv_per_share = equity_value / shares_outstanding
+
+    return {
+        "method": "DCF Three-Stage (Course-Strict ACCT6111E)",
+        "formula": "TV = NOPAT × (1 - g/ROI) / (WACC - g)",
+        "inputs": {
+            "nopat_year1": nopat_year1,
+            "growth_high": growth_high, "years_high": years_high,
+            "growth_mid": growth_mid, "years_mid": years_mid,
+            "growth_terminal": growth_terminal,
+            "wacc": wacc, "terminal_roi": terminal_roi,
+            "roi_stage1": roi_stage1, "roi_stage2": roi_stage2,
+            "shares_outstanding": shares_outstanding,
+            "net_debt": net_debt,
+        },
+        "pv_fcf_explicit": pv_fcf,
+        "sum_pv_explicit": sum_pv_explicit,
+        "nopat_terminal_year": nopat_terminal,
+        "b_terminal": b_terminal,
+        "fcf_terminal": fcf_terminal,
+        "terminal_value": terminal_value,
+        "pv_terminal": pv_terminal,
+        "tv_concentration": pv_terminal / enterprise_value,
+        "enterprise_value": enterprise_value,
+        "equity_value": equity_value,
+        "iv_per_share": iv_per_share,
+    }
+
+
+# -----------------------------------------------------------------------------
 # EPV — Earnings Power Value (Bruce Greenwald / Dr. Swaminathan)
 # -----------------------------------------------------------------------------
 def epv(
@@ -583,6 +711,7 @@ def owner_earnings(net_income: float, da: float, maintenance_capex: float,
 DISPATCH = {
     "dcf2": dcf_two_stage,
     "dcf3": dcf_three_stage,
+    "dcf3_strict": dcf_three_stage_course_strict,  # COURSE-STRICT ACCT6111E
     "epv": epv,
     "wacc": wacc_calc,
     "sensitivity": lambda **kw: sensitivity_dcf(**kw),
