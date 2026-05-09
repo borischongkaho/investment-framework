@@ -1,8 +1,9 @@
 # Investment Framework
 
-> **Current Version**: V4.2 hardened (2026-05-08)
-> **Methodology**: CUHK MBA ACCT6111E (Dr. Bhaskaran Swaminathan)
-> **Status**: Production-ready, backtest-validated
+> **Current Version**: v5.0.0-alpha (2026-05-09)
+> **Canonical SPEC**: [`framework/SPEC.md`](framework/SPEC.md) — source of truth, locked for review
+> **Methodology**: CUHK MBA ACCT6111E (Dr. Bhaskaran Swaminathan), augmented by 5 V4.x deterministic gates
+> **Status**: V5.0-alpha foundation locked; V5.0 GA pending random-sample backtest execution
 
 Systematic value investing framework with **forensic screening, data quality gates, Bull/Bear debate, and 3-judge final action audit**. Built on Claude Code skills + Python framework code.
 

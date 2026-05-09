@@ -4,6 +4,36 @@
 
 ---
 
+## v5.0.0-alpha — Statistical Confidence Layer (2026-05-09)
+
+> **Status**: Pre-commercial foundation phase. Backwards-compatible — all V4.x calls still work. Single-point IV in Section 1 / 9 / 17 of any new report is **deprecated** in favour of distribution-based output.
+
+### What changed
+- ✅ `valuation_calc.py` adds two functions:
+  - `wilson_ci(successes, n, confidence=0.95)` — binomial CI for backtest hit rates. Stable for small n and extreme p.
+  - `monte_carlo_dcf(base_inputs, num_simulations=10000, uncertainty="medium")` — replaces single-point IV with sampled distribution (p5/p25/p50/p75/p95).
+- ✅ `tests/test_smoke.py` extended from 12 → 19 tests. New coverage: Wilson backtest case (14/16), extreme proportions (0/n and n/n), CI tightening with sample size, MC distribution invariants, MC seed reproducibility, MC uncertainty preset response.
+- ✅ `framework/v42_advanced_report_template.md` updated:
+  - Section 1 Decision Card now requires Monte Carlo IV range (median + 90% CI), not single point.
+  - Section 9 Three-Method Valuation now requires MC distribution for DCF (10K simulations).
+  - Section 17 Final Decision Card now requires bear-case (p5) MoS and conviction tag (TIGHT/MODERATE/WIDE).
+  - Format Rules add "statistical honesty" requirement: every quantitative claim has uncertainty.
+- ✅ Demo retrofit: `ADBE_2026-05-06_v42_ADVANCED.md` annotated with V5 distribution block. Even in p5 bear case, IV $423 > price $385 → +10% MoS retained — strongest signal of conviction.
+
+### Why this matters (critic 5/9 priority #1)
+"87.5% backtest hit rate (n=16)" without CI was overstated. With Wilson CI: **87.5% [64.0%, 96.5%] (n=16)** — directionally positive but sample too small for any narrow claim. Same logic for IV: distribution > point.
+
+### Pure stdlib, no new dependencies
+Both functions use only `math`, `random`, `statistics` — no NumPy / SciPy required. Keeps `pyproject.toml` lean.
+
+### Pending (V5.0 GA)
+- Random sampling backtest n=50+ (Item #2 of foundation plan)
+- Cross-LLM verification: GPT-4o + Gemini independent Phase 9 audit (Item #3)
+- Live forward prediction tracking system (Item #4)
+- README.md update once V5.0 GA ships
+
+---
+
 ## v4.2.x — Current Stable (2026-05-08)
 
 ### v4.2.3 — 2026-05-08
