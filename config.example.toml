@@ -1,0 +1,9 @@
+# boris_trade — example config
+#
+# Copy to `config.local.toml` (gitignored) and edit your values.
+# Or override via env vars: BT_INVESTMENT_DIR, BT_LANGUAGE.
+#
+# Defaults below assume `./data/` inside the repo work dir.
+
+investment_dir = "data"   # Path to portfolio + research dir. Relative paths resolved against repo root.
+language = "zh-HK"        # Output language for reports + skill prose. zh-HK | en | ja
