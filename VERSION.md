@@ -4,6 +4,38 @@
 
 ---
 
+## v5.1.0-alpha — V4.4 Accounting Hardening + V2.1 Reporting (2026-05-28)
+
+> **Status**: Additive to v5.0.0-alpha. All prior calls remain compatible. Folds the V4.4
+> accounting-hardening track and V2.1 reporting spec into the v5 line.
+
+### What changed
+- ✅ `framework/wacc_calc.py` (NEW): standardized CAPM WACC — `Re = Rf + β×ERP + Country Premium`.
+  Removes ad-hoc per-memo discount rates (root cause of +15-40% intrinsic bias).
+- ✅ `framework/valuation_inputs.py` (NEW): mandatory pre-flight inputs check — ASC 842 operating
+  leases added to net debt, SBC deducted from FCF, sanity warnings on stale/estimated cells.
+- ✅ `framework/dcf_model_builder.py` (NEW): generates institutional live .xlsx DCF — case selector
+  (Bear/Base/Bull via CHOOSE), mid-year convention, WACC sheet, live sensitivity table, colour
+  coding + cell comments. Ships with a single illustrative example config.
+- ✅ `framework/V44_V21_methodology.md` (NEW): full methodology — V4.4 hardening (CAPM WACC,
+  ASC 842 leases, SBC-adj FCF, mid-year convention, SOTP), multi-method reconciliation,
+  V2.1 17-section reporting spec, Q6 HARD GATE, scenario ranges, risk-budget sizing,
+  portfolio construction layer, 6-Q / Auto-VETO (8) / 3-Judge gates, thesis tracker.
+- ✅ `portfolio_structure/thesis_tracker_template.md` (NEW): falsifiable thesis scorecard template
+  (pillar trends over time, disconfirming-evidence watch, quarterly review).
+
+### Why this matters
+Three systematic biases (ad-hoc WACC 1-3pp too low, operating leases excluded, SBC not deducted)
+compounded to +15-40% upward intrinsic bias. V4.4 corrects all three. V2.1 adds decision
+compression (Decision Sheet, scenario ranges, risk-budget sizing) — the gap an independent review
+flagged as more important than additional analytical depth.
+
+### Validation
+- 50-case historical backtest: 76% hit rate, Wilson 95% CI [56%, 89%].
+- Q6 HARD GATE precision 91%; Auto-VETO precision 93% (backtest sample).
+
+---
+
 ## v5.0.0-alpha — Statistical Confidence Layer (2026-05-09)
 
 > **Status**: Pre-commercial foundation phase. Backwards-compatible — all V4.x calls still work. Single-point IV in Section 1 / 9 / 17 of any new report is **deprecated** in favour of distribution-based output.
