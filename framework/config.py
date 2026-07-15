@@ -55,6 +55,10 @@ class Config:
     def journal_dir(self) -> Path:
         return self.investment_dir / "journal"
 
+    @property
+    def forward_predictions_path(self) -> Path:
+        return self.investment_dir / "forward_predictions.json"
+
 
 def _load_toml(path: Path) -> dict:
     if not path.exists():

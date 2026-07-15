@@ -44,6 +44,10 @@
 
 ### Section 1 — Decision Card
 - 1 table with: Current price, Intrinsic, MoS, Phase 9 verdict, Action, Size, Limit price
+- **Intrinsic must be reported as a Monte Carlo range, not a single point**
+  - Format: `IV median $X (90% CI: $Y-$Z, 50% CI: $a-$b)`
+  - Source: `monte_carlo_dcf(base_inputs, uncertainty="medium")` from valuation_calc
+  - MoS computed off median ($X) — but display CI alongside so reader sees the assumption sensitivity
 - 1-paragraph "thesis in plain language"
 - Top 3 reasons + Top 3 risks (bullet points)
 - Pre-committed exit triggers
@@ -95,8 +99,15 @@
 ### Section 9 — Three-Method Valuation
 - **EPV calculation**: every input + Excel formula equivalent
 - **Strict DCF**: Stage 1, Stage 2, Terminal (NOPAT × (1-g/ROI)/(WACC-g))
+  - Single-point IV (base assumptions) — REQUIRED
+  - **Monte Carlo IV distribution (NEW V5)** — REQUIRED:
+    - 10,000-simulation run via `monte_carlo_dcf` (default uncertainty="medium")
+    - Report p5 / p25 / p50 / p75 / p95 percentiles
+    - Plot or table comparing single-point IV vs MC median (sanity check)
+    - Choose `uncertainty="low"` only if Phase 0.7 Data Quality Gate scored ≥ 8/9 with no estimated cells
+    - Choose `uncertainty="high"` for early-stage / cyclical / restructuring names
 - **Multiples**: Peer comparables table, EPS forecasts, multiples range
-- Reconciliation: weighted intrinsic + scenario sensitivities
+- Reconciliation: weighted intrinsic + scenario sensitivities (replaces old grid; MC subsumes it)
 
 ### Section 10 — Sanity Bounds (Phase 4.5)
 - WACC reasonable?
@@ -143,6 +154,14 @@
 - Size: $X (Y% of portfolio)
 - Limit price + alternatives
 - Time horizon
+- **Intrinsic Value summary (V5 required format)**:
+  - `IV median $X (90% CI: $Y-$Z) — sourced from monte_carlo_dcf`
+  - MoS at current price = (median − price) / price
+  - "Bear-case MoS" = (p5 − price) / price (worst 5% scenario)
+  - Conviction tag: `TIGHT` (90% CI < 20% of median) / `MODERATE` (20-40%) / `WIDE` (>40%)
+- **Backtest hit rate citation (V5 required format)**:
+  - `Framework historical hit rate X% [Wilson 95% CI: Y%, Z%] (n=N)` — sourced from wilson_ci
+  - Never cite hit rate without n and CI
 - Exit triggers (3 hard, 3 soft)
 - Add zones (price + condition)
 - Trim zones (price + condition)
@@ -161,6 +180,11 @@
 - **Visual hierarchy**: H2 for major sections, H3 for sub-sections, **bold** for key terms
 - **No marketing tone** — Boris wants institutional-grade analysis
 - **Self-contained** — reader 唔需要 follow-up questions
+- **Statistical honesty (V5)** — every quantitative claim has uncertainty:
+  - Intrinsic Value → Monte Carlo distribution (p5/p50/p95), never bare point
+  - Hit rate / win rate → Wilson 95% CI with explicit n
+  - Sensitivity → distributional summary (CI), not just min/max grid corners
+  - Single-point numbers without CI signal "I haven't done the work" — banned
 
 ---
 
@@ -195,3 +219,4 @@
 - V4.0：Bull/Bear + Phase 9 introduced
 - V4.1：Auto-VETO triggers + 5 new calc functions
 - V4.2：Data Quality Gate + Excel-faithful mapping + this advanced report format
+- V5.0-alpha：Statistical Confidence Layer — Monte Carlo DCF + Wilson CI on every backtest claim. Single-point IV banned in Section 1 / 9 / 17 — must show distribution.

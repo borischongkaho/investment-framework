@@ -1,0 +1,102 @@
+[
+  {
+    "ticker": "AMGN",
+    "entry_date": "2016-10-13",
+    "verdict": "BUY",
+    "intrinsic_value": 175.00,
+    "current_price_at_entry": 145.00,
+    "data_quality_score": 8,
+    "auto_veto_triggered": false,
+    "rationale_short": "Smoke test stub — biotech compounder, durable franchises"
+  },
+  {
+    "ticker": "AXP",
+    "entry_date": "2018-04-12",
+    "verdict": "HOLD",
+    "intrinsic_value": 100.00,
+    "current_price_at_entry": 95.00,
+    "data_quality_score": 7,
+    "auto_veto_triggered": false,
+    "rationale_short": "Smoke test stub — fairly valued network business"
+  },
+  {
+    "ticker": "DIS",
+    "entry_date": "2014-03-02",
+    "verdict": "BUY",
+    "intrinsic_value": 100.00,
+    "current_price_at_entry": 80.00,
+    "data_quality_score": 8,
+    "auto_veto_triggered": false,
+    "rationale_short": "Smoke test stub — IP moat + parks scaling"
+  },
+  {
+    "ticker": "F",
+    "entry_date": "2014-02-23",
+    "verdict": "VETO",
+    "intrinsic_value": 14.00,
+    "current_price_at_entry": 15.50,
+    "data_quality_score": 6,
+    "auto_veto_triggered": true,
+    "rationale_short": "Smoke test stub — auto cyclical, no moat"
+  },
+  {
+    "ticker": "IBM",
+    "entry_date": "2015-12-03",
+    "verdict": "VETO",
+    "intrinsic_value": 130.00,
+    "current_price_at_entry": 140.00,
+    "data_quality_score": 7,
+    "auto_veto_triggered": true,
+    "rationale_short": "Smoke test stub — declining legacy biz, yield trap"
+  },
+  {
+    "ticker": "MDT",
+    "entry_date": "2018-06-10",
+    "verdict": "HOLD",
+    "intrinsic_value": 90.00,
+    "current_price_at_entry": 85.00,
+    "data_quality_score": 8,
+    "auto_veto_triggered": false,
+    "rationale_short": "Smoke test stub — mature med device"
+  },
+  {
+    "ticker": "MSFT",
+    "entry_date": "2017-12-15",
+    "verdict": "BUY",
+    "intrinsic_value": 100.00,
+    "current_price_at_entry": 86.00,
+    "data_quality_score": 9,
+    "auto_veto_triggered": false,
+    "rationale_short": "Smoke test stub — Azure inflection + Office 365"
+  },
+  {
+    "ticker": "TGT",
+    "entry_date": "2014-04-21",
+    "verdict": "HOLD",
+    "intrinsic_value": 65.00,
+    "current_price_at_entry": 60.00,
+    "data_quality_score": 7,
+    "auto_veto_triggered": false,
+    "rationale_short": "Smoke test stub — discount retailer, slow turnaround"
+  },
+  {
+    "ticker": "TXN",
+    "entry_date": "2016-10-12",
+    "verdict": "BUY",
+    "intrinsic_value": 90.00,
+    "current_price_at_entry": 70.00,
+    "data_quality_score": 9,
+    "auto_veto_triggered": false,
+    "rationale_short": "Smoke test stub — analog semis, capital allocation A"
+  },
+  {
+    "ticker": "WMT",
+    "entry_date": "2015-05-28",
+    "verdict": "BUY",
+    "intrinsic_value": 90.00,
+    "current_price_at_entry": 75.00,
+    "data_quality_score": 8,
+    "auto_veto_triggered": false,
+    "rationale_short": "Smoke test stub — defensive moat, ecommerce pivot"
+  }
+]

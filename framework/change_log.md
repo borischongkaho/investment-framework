@@ -1,5 +1,23 @@
 # Framework Change Log
 
+## v5.0.0-alpha — Statistical Confidence Layer (2026-05-09)
+
+### What's new
+- `wilson_ci()` — binomial CI for hit rates (replaces bare percentages)
+- `monte_carlo_dcf()` — distribution-based IV (replaces single-point estimates)
+- Report template Section 1/9/17 require CI annotations
+- 19 pytest tests (was 12) — new statistical layer covered
+- Demo retrofit on ADBE 2026-05-06 report
+
+### Migration
+- All V4.x DCF calls keep working. New functions are additive.
+- Reports authored before 2026-05-09 may still use single-point IV; new reports must use MC distribution per template Section 1/9/17 spec.
+
+### Why
+Critic 5/9 report flagged "single-point estimates without CI" as the #1 framework credibility gap. This release closes that gap. Sample size is still small (n=16 backtest); reducing CI width is the work of v5.0 GA (random sampling backtest n=50+).
+
+---
+
 ## v2.0 Hardened — 2026-05-03
 
 ### Critical Bug Fixes

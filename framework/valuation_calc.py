@@ -20,6 +20,9 @@ Or import as module:
 """
 
 import json
+import math
+import random
+import statistics
 import sys
 from typing import Optional
 
@@ -706,6 +709,222 @@ def owner_earnings(net_income: float, da: float, maintenance_capex: float,
 
 
 # -----------------------------------------------------------------------------
+# Statistical Confidence Layer (V5 Foundation)
+# -----------------------------------------------------------------------------
+# Why this section exists:
+# Without confidence intervals, single-point estimates ("IV = $185", "hit rate = 87.5%")
+# overstate certainty. Critic 5/9 report flagged this as #1 credibility gap.
+#
+# wilson_ci    — binomial CI for backtest hit rates (small n, extreme p tolerant)
+# monte_carlo_dcf — distribution-based IV instead of single-point estimate
+
+_WILSON_Z_TABLE = {0.80: 1.2816, 0.90: 1.6449, 0.95: 1.9600, 0.99: 2.5758}
+
+
+def wilson_ci(successes: int, n: int, confidence: float = 0.95) -> dict:
+    """
+    Wilson score interval for a binomial proportion.
+
+    Why Wilson over normal approximation:
+    - Normal approx breaks for small n (< 30) — gives bounds outside [0,1].
+    - Normal approx breaks for extreme p (near 0 or 1) — coverage drops.
+    - Wilson stays well-calibrated across full p range, even at small n.
+
+    Primary use: backtest hit rate reporting.
+        "16 cases, 14 hit" → 87.5% [62.5%, 96.7%] (n=16)
+
+    Args:
+        successes: count of successful trials (0 <= successes <= n)
+        n: total sample size (>= 1)
+        confidence: confidence level in (0, 1); standard values are
+                    0.80 / 0.90 / 0.95 / 0.99
+    """
+    if n < 1:
+        raise ValueError(f"n ({n}) must be >= 1")
+    if successes < 0 or successes > n:
+        raise ValueError(f"successes ({successes}) must be in [0, {n}]")
+    if not (0 < confidence < 1):
+        raise ValueError(f"confidence ({confidence}) must be in (0, 1)")
+
+    z = _WILSON_Z_TABLE.get(round(confidence, 2))
+    if z is None:
+        raise ValueError(
+            f"confidence={confidence} not in standard table {sorted(_WILSON_Z_TABLE)}. "
+            "Use one of these standard levels."
+        )
+
+    p = successes / n
+    denom = 1 + (z ** 2) / n
+    centre = (p + (z ** 2) / (2 * n)) / denom
+    half_width = (z * math.sqrt(p * (1 - p) / n + (z ** 2) / (4 * (n ** 2)))) / denom
+
+    lower = max(0.0, centre - half_width)
+    upper = min(1.0, centre + half_width)
+    width = upper - lower
+
+    if width >= 0.50:
+        interpretation = "TOO WIDE — sample too small for any confident claim"
+    elif width >= 0.20:
+        interpretation = "WIDE — directional signal only, need more samples"
+    elif width >= 0.10:
+        interpretation = "MODERATE — meaningful but not precise"
+    else:
+        interpretation = "TIGHT — high confidence in the rate"
+
+    return {
+        "method": "Wilson Score Interval",
+        "successes": successes,
+        "n": n,
+        "point_estimate": p,
+        "confidence": confidence,
+        "lower": lower,
+        "upper": upper,
+        "ci_width": width,
+        "interpretation": interpretation,
+        "formatted": f"{p*100:.1f}% [{lower*100:.1f}%, {upper*100:.1f}%] (n={n}, {int(confidence*100)}% CI)",
+    }
+
+
+def monte_carlo_dcf(
+    base_inputs: dict,
+    num_simulations: int = 10000,
+    uncertainty: str = "medium",
+    seed: int = 42,
+    method: str = "two_stage",
+) -> dict:
+    """
+    Monte Carlo DCF: replace single-point IV estimate with a sampled distribution.
+
+    Inputs (growth, WACC, terminal growth) are drawn from Gaussian distributions
+    around the base assumptions, and a DCF is run for each draw. Output is a
+    distribution of IV values, summarized by percentile (p5/25/50/75/95).
+
+    Why this matters:
+    - Single-point IV hides assumption sensitivity.
+    - "IV = $185" feels solid; "IV most likely $148-$232 (90% CI)" is honest.
+
+    Uncertainty presets (translated to Gaussian std for sampling):
+        "low":    ±5% rel growth, ±25bps WACC, ±25bps terminal_g
+        "medium": ±15% rel growth, ±50bps WACC, ±50bps terminal_g (default)
+        "high":   ±25% rel growth, ±100bps WACC, ±100bps terminal_g
+
+    Args:
+        base_inputs: dict matching dcf_two_stage or dcf_three_stage signature
+        num_simulations: number of MC draws (default 10000)
+        uncertainty: "low" / "medium" / "high"
+        seed: random seed for reproducibility
+        method: "two_stage" or "three_stage"
+    """
+    presets = {
+        "low":    {"growth_rel_std": 0.05, "wacc_abs_std": 0.0025, "term_abs_std": 0.0025},
+        "medium": {"growth_rel_std": 0.15, "wacc_abs_std": 0.0050, "term_abs_std": 0.0050},
+        "high":   {"growth_rel_std": 0.25, "wacc_abs_std": 0.0100, "term_abs_std": 0.0100},
+    }
+    if uncertainty not in presets:
+        raise ValueError(f"uncertainty must be one of {list(presets)}, got {uncertainty!r}")
+
+    if method == "two_stage":
+        dcf_fn = dcf_two_stage
+    elif method == "three_stage":
+        dcf_fn = dcf_three_stage
+    else:
+        raise ValueError(f"method must be 'two_stage' or 'three_stage', got {method!r}")
+
+    spec = presets[uncertainty]
+    rng = random.Random(seed)
+
+    base_growth_high = base_inputs["growth_high"]
+    base_wacc = base_inputs["wacc"]
+    base_term = base_inputs["growth_terminal"]
+    growth_high_std = max(abs(base_growth_high) * spec["growth_rel_std"], 0.005)
+
+    base_growth_mid = base_inputs.get("growth_mid")
+    growth_mid_std = (
+        max(abs(base_growth_mid) * spec["growth_rel_std"], 0.005)
+        if base_growth_mid is not None else None
+    )
+
+    iv_samples = []
+    error_count = 0
+
+    for _ in range(num_simulations):
+        sample = dict(base_inputs)
+        sample["growth_high"] = rng.gauss(base_growth_high, growth_high_std)
+        sample["wacc"] = max(0.03, rng.gauss(base_wacc, spec["wacc_abs_std"]))
+        sample["growth_terminal"] = max(0.0, rng.gauss(base_term, spec["term_abs_std"]))
+
+        if method == "three_stage" and base_growth_mid is not None:
+            sample["growth_mid"] = rng.gauss(base_growth_mid, growth_mid_std)
+
+        try:
+            result = dcf_fn(**sample)
+            iv = result["iv_per_share"]
+            if iv > 0 and not (math.isnan(iv) or math.isinf(iv)):
+                iv_samples.append(iv)
+            else:
+                error_count += 1
+        except (ValueError, ZeroDivisionError):
+            error_count += 1
+
+    if len(iv_samples) < 100:
+        raise ValueError(
+            f"Only {len(iv_samples)}/{num_simulations} simulations valid. "
+            "Inputs likely too unstable — review base assumptions or lower uncertainty."
+        )
+
+    iv_samples.sort()
+
+    def _pctl(samples_sorted: list, p: float) -> float:
+        k = (len(samples_sorted) - 1) * p
+        floor_k = math.floor(k)
+        ceil_k = math.ceil(k)
+        if floor_k == ceil_k:
+            return samples_sorted[int(k)]
+        return samples_sorted[floor_k] * (ceil_k - k) + samples_sorted[ceil_k] * (k - floor_k)
+
+    p5 = _pctl(iv_samples, 0.05)
+    p25 = _pctl(iv_samples, 0.25)
+    p50 = _pctl(iv_samples, 0.50)
+    p75 = _pctl(iv_samples, 0.75)
+    p95 = _pctl(iv_samples, 0.95)
+
+    mean_iv = statistics.mean(iv_samples)
+    stdev_iv = statistics.stdev(iv_samples) if len(iv_samples) > 1 else 0.0
+
+    return {
+        "method": f"Monte Carlo DCF ({method})",
+        "uncertainty_preset": uncertainty,
+        "num_simulations": num_simulations,
+        "num_valid": len(iv_samples),
+        "num_errors": error_count,
+        "mean": mean_iv,
+        "median_p50": p50,
+        "stdev": stdev_iv,
+        "p5": p5,
+        "p25": p25,
+        "p75": p75,
+        "p95": p95,
+        "ci_90_lower": p5,
+        "ci_90_upper": p95,
+        "ci_50_lower": p25,
+        "ci_50_upper": p75,
+        "formatted": (
+            f"IV median ${p50:.2f} "
+            f"(90% CI: ${p5:.2f}-${p95:.2f}, 50% CI: ${p25:.2f}-${p75:.2f})"
+        ),
+        "input_distributions": {
+            "growth_high": {"mean": base_growth_high, "std": growth_high_std},
+            "wacc": {"mean": base_wacc, "std": spec["wacc_abs_std"]},
+            "growth_terminal": {"mean": base_term, "std": spec["term_abs_std"]},
+            "growth_mid": (
+                {"mean": base_growth_mid, "std": growth_mid_std}
+                if base_growth_mid is not None else None
+            ),
+        },
+    }
+
+
+# -----------------------------------------------------------------------------
 # CLI
 # -----------------------------------------------------------------------------
 DISPATCH = {
@@ -722,6 +941,8 @@ DISPATCH = {
     "reverse_dcf": lambda **kw: reverse_dcf(**kw),
     "owner_earnings": lambda **kw: owner_earnings(**kw),
     "yield_velocity": lambda **kw: yield_velocity_check(**kw),
+    "wilson_ci": lambda **kw: wilson_ci(**kw),
+    "mc_dcf": lambda **kw: monte_carlo_dcf(**kw),
 }
 
 
