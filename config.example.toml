@@ -2,6 +2,9 @@
 #
 # Copy to `config.local.toml` (gitignored) and edit your values.
 # Or override via env vars: BT_INVESTMENT_DIR, BT_LANGUAGE.
+# v5.2.0 extras: BT_POSITIONS_PATH (positions.json), BT_DECISIONS_PATH (decisions.json),
+#   BT_MODELS_DIR (dcf_model_builder output), BT_CONFIG_DIR (fmp.env dir), BT_CACHE_DIR (pool screen cache),
+#   FMP_API_KEY (Financial Modeling Prep key — or put FMP_API_KEY=... in $BT_CONFIG_DIR/fmp.env).
 #
 # Defaults below assume `./data/` inside the repo work dir.
 

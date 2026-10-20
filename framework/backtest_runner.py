@@ -9,10 +9,10 @@ For each historical decision (BUY / SELL / HOLD), compute:
 - Alpha vs sector ETF (XLV / XLK / XLF / etc.)
 - For crypto: alpha vs BTC HODL
 
-Output: ~/Developer/investment/backtest/scorecard.md
+Output: <investment_dir>/backtest/scorecard.md
 
 Decisions are read from a JSON manifest at:
-~/Developer/investment/decision_log/decisions.json
+<investment_dir>/decision_log/decisions.json  (BT_DECISIONS_PATH env var overrides; see config.py)
 
 Usage:
     python3 backtest_runner.py
@@ -22,6 +22,7 @@ Usage:
 
 import argparse
 import json
+import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -31,14 +32,29 @@ from typing import Optional
 import warnings
 warnings.filterwarnings("ignore")
 
-import yfinance as yf
-import pandas as pd
+try:
+    import yfinance as yf
+    import pandas as pd
+except ImportError:  # optional heavy deps — only needed to run a backtest, not for --help
+    yf = None
+    pd = None
 
 
-HOME = Path.home()
-INVEST_DIR = HOME / "Developer" / "investment"
-DECISIONS_PATH = INVEST_DIR / "decision_log" / "decisions.json"
-SCORECARD_PATH = INVEST_DIR / "backtest" / "scorecard.md"
+def _resolve_paths():
+    try:
+        from config import load as load_config
+        cfg = load_config()
+        invest_dir, decisions, scorecard = cfg.investment_dir, cfg.decisions_path, cfg.scorecard_path
+    except Exception:
+        invest_dir = Path(__file__).resolve().parent.parent / "data"
+        decisions, scorecard = invest_dir / "decision_log" / "decisions.json", invest_dir / "backtest" / "scorecard.md"
+    override = os.environ.get("BT_DECISIONS_PATH")
+    if override:
+        decisions = Path(override).expanduser()
+    return invest_dir, decisions, scorecard
+
+
+INVEST_DIR, DECISIONS_PATH, SCORECARD_PATH = _resolve_paths()
 
 # Sector ETF mapping (US stocks)
 SECTOR_ETFS = {
@@ -260,6 +276,10 @@ def main():
                         help="Output markdown path (default: scorecard.md, or TICKER_scorecard.md when --ticker is set)")
     args = parser.parse_args()
 
+    if yf is None:
+        print("❌ yfinance + pandas are required to run a backtest: pip install yfinance pandas", file=sys.stderr)
+        sys.exit(1)
+
     if args.output is None:
         if args.ticker:
             args.output = str(SCORECARD_PATH.parent / f"{args.ticker.upper()}_scorecard.md")
@@ -268,7 +288,7 @@ def main():
 
     if not DECISIONS_PATH.exists():
         print(f"❌ Decision log not found: {DECISIONS_PATH}")
-        print("   Run decision_log.py first to bootstrap from portfolio.md")
+        print("   Run decision_log.py add/seed first to create the decision ledger")
         sys.exit(1)
 
     with open(DECISIONS_PATH) as f:

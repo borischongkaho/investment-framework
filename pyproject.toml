@@ -1,6 +1,6 @@
 [project]
 name = "boris-trade"
-version = "5.0.0"
+version = "5.2.0"
 description = "Investment framework — ACCT6111E v5 hardened"
 requires-python = ">=3.11"
 dependencies = [

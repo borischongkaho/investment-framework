@@ -59,6 +59,23 @@ class Config:
     def forward_predictions_path(self) -> Path:
         return self.investment_dir / "forward_predictions.json"
 
+    # v5.2.0 — V4.9 operations layer (decision_log / backtest_runner / pre_trade_gate / stress_test / portfolio_sync)
+    @property
+    def decisions_path(self) -> Path:
+        return self.investment_dir / "decision_log" / "decisions.json"
+
+    @property
+    def scorecard_path(self) -> Path:
+        return self.investment_dir / "backtest" / "scorecard.md"
+
+    @property
+    def positions_path(self) -> Path:
+        return self.investment_dir / "positions.json"
+
+    @property
+    def models_dir(self) -> Path:
+        return self.investment_dir / "models"
+
 
 def _load_toml(path: Path) -> dict:
     if not path.exists():
@@ -93,9 +110,28 @@ def load() -> Config:
     return Config(investment_dir=investment_path, language=language)
 
 
+EXAMPLE_POSITIONS_PATH = REPO_ROOT / "portfolio_structure" / "positions.example.json"
+
+
+def resolve_positions_path() -> Path:
+    """Where the machine-readable portfolio state lives (pre_trade_gate / stress_test / portfolio_sync).
+
+    Order: BT_POSITIONS_PATH env var -> <investment_dir>/positions.json (if it exists) ->
+    the bundled, fake positions.example.json so the tools run out-of-the-box as a demo.
+    """
+    override = os.environ.get("BT_POSITIONS_PATH")
+    if override:
+        return Path(override).expanduser()
+    candidate = load().positions_path
+    if candidate.exists():
+        return candidate
+    return EXAMPLE_POSITIONS_PATH
+
+
 if __name__ == "__main__":
     cfg = load()
     print(f"investment_dir: {cfg.investment_dir}")
     print(f"language: {cfg.language}")
     print(f"portfolio_path: {cfg.portfolio_path}")
     print(f"full_reports_dir: {cfg.full_reports_dir}")
+    print(f"positions_path: {resolve_positions_path()}")

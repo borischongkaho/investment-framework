@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 DCF Model Builder — V4.4 + Anthropic FSI Standard
-Boris's investment system.
+investment framework.
 
 Generates institutional-quality live Excel DCF models with:
 - Case selector (1=Bear, 2=Base, 3=Bull)
@@ -16,21 +16,41 @@ Generates institutional-quality live Excel DCF models with:
 Usage:
     python3 dcf_model_builder.py            # builds all configs in CONFIGS
     python3 dcf_model_builder.py EXMPL      # single ticker
+    Output dir: BT_MODELS_DIR env var, else <investment_dir>/models (config.py), else ./models
 
 Then recalc:
     soffice --headless --convert-to xlsx --outdir /tmp <file>  (or recalc.py)
 """
 
+import os
 import sys
 from datetime import date
 from pathlib import Path
 
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
-from openpyxl.comments import Comment
+if __name__ == "__main__" and any(a in ("-h", "--help") for a in sys.argv[1:]):
+    print(__doc__.strip())
+    sys.exit(0)
 
-OUT_DIR = Path("./models")
-OUT_DIR.mkdir(exist_ok=True)
+try:
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+    from openpyxl.comments import Comment
+except ImportError as e:  # heavy optional dep — only needed to actually build a workbook
+    raise SystemExit(f"dcf_model_builder.py needs openpyxl (pip install openpyxl): {e}")
+
+
+def _out_dir() -> Path:
+    override = os.environ.get("BT_MODELS_DIR")
+    if override:
+        return Path(override).expanduser()
+    try:
+        from config import load as load_config
+        return load_config().models_dir
+    except Exception:
+        return Path("./models")
+
+
+OUT_DIR = _out_dir()
 
 # ---- Style constants (Anthropic FSI standard) ----
 BLUE = Font(color="0000FF")           # hardcoded inputs
@@ -159,7 +179,7 @@ def build_model(cfg):
     ws["A2"].font = BLACK
 
     lbl(ws, "A4", "CASE SELECTOR (1=Bear 2=Base 3=Bull)", bold=True)
-    inp(ws, "B4", 2, "Boris selects scenario", "0")
+    inp(ws, "B4", 2, "User selects scenario", "0")
     fml(ws, "C4", '=IF(B4=1,"BEAR",IF(B4=2,"BASE","BULL"))', bold=True)
 
     # Market data
@@ -341,6 +361,7 @@ CONFIGS = {
 
 
 def main():
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
     targets = [sys.argv[1].upper()] if len(sys.argv) > 1 else list(CONFIGS.keys())
     for t in targets:
         fn = build_model(CONFIGS[t])

@@ -947,6 +947,9 @@ DISPATCH = {
 
 
 def main():
+    if any(a in ("-h", "--help") for a in sys.argv[1:]):
+        print(__doc__.strip())
+        return
     if len(sys.argv) < 3:
         print(__doc__)
         print("\nAvailable methods:", list(DISPATCH.keys()))

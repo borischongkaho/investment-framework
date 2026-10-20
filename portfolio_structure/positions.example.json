@@ -1,0 +1,25 @@
+{
+  "_comment": "EXAMPLE portfolio state with FAKE holdings. Copy to <investment_dir>/positions.json (gitignored) or set BT_POSITIONS_PATH to your real file. V4.8: run portfolio_sync.py to refresh prices/values; update shares/avg_cost on every trade. Used by pre_trade_gate.py / stress_test.py / portfolio_sync.py.",
+  "as_of": "2026-10-20",
+  "total_portfolio_usd": 100000,
+  "cash_usd": 81000,
+  "positions": {
+    "AAPL": {"shares": 36, "avg_cost": 180.0, "yf": "AAPL", "value_usd": 9000, "tags": ["tech", "consumer"], "last_price": 250.0},
+    "MSFT": {"shares": 20, "avg_cost": 400.0, "yf": "MSFT", "value_usd": 10000, "tags": ["tech", "ai"], "last_price": 500.0}
+  },
+  "entry_dates": {"AAPL": "2025-01-15", "MSFT": "2025-06-01"},
+  "new_buys_this_month": 0,
+  "new_buys_month": "2026-10",
+  "limits": {
+    "single_stock_max_pct": 15,
+    "crypto_total_max_pct": 20,
+    "cash_reserve_min_pct": 10,
+    "ai_correlated_max_pct": 40,
+    "monthly_new_buys_max": 2,
+    "mos_hard_gate_pct": 20,
+    "mos_watch_floor_pct": 15,
+    "smart_money_premium_max_pct": 25,
+    "min_hold_days_soft": 180,
+    "dividend_withholding_pct": 30
+  }
+}

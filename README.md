@@ -1,9 +1,9 @@
 # Investment Framework
 
-> **Current Version**: v5.0.0-alpha (2026-05-09)
+> **Current Version**: v5.2.0 (2026-10-20)
 > **Canonical SPEC**: [`framework/SPEC.md`](framework/SPEC.md) — source of truth, locked for review
 > **Methodology**: CUHK MBA ACCT6111E (Dr. Bhaskaran Swaminathan), augmented by 5 V4.x deterministic gates
-> **Status**: V5.0-alpha foundation locked; V5.0 GA pending random-sample backtest execution
+> **Status**: V5.2.0 — V4.9 operations layer + 2026-10 accounting fixes synced; V5.0 GA still pending random-sample backtest execution
 
 Systematic value investing framework with **forensic screening, data quality gates, Bull/Bear debate, and 3-judge final action audit**. Built on Claude Code skills + Python framework code.
 
@@ -159,6 +159,23 @@ Decision rule:
 | `framework/backtest_runner.py` | Multi-benchmark performance scorecard |
 | `framework/futu_costs.py` | Broker cost calculator (Futu HK rates) |
 | `framework/excel_input_template.json` | 13 ACCT6111E cells mapped to verifiable sources |
+| `framework/valuation_inputs.py` | V4.4 pre-flight inputs (ASC 842 leases counted once, SBC-adjusted FCF); `--source auto\|fmp\|yf` |
+| `framework/wacc_calc.py` | Standardized CAPM WACC (Rf + β×ERP + country premium) |
+| `framework/dcf_model_builder.py` | Live Excel DCF (Bear/Base/Bull selector, mid-year convention, sensitivity table) |
+| `framework/forward_tracker.py` | Lock predictions, resolve 3/6/9/12-month checkpoints, calibration report |
+| `framework/random_sample_backtest.py` | Random-sample historical backtest scaffold |
+| `framework/pre_trade_gate.py` | **Mandatory BUY (C4) / SELL (C10) gate** — exit 0 pass / 1 override / 2 fail |
+| `framework/kelly_lite.py` | Quarter-Kelly position-sizing reference (capped by single-stock rule) |
+| `framework/pool_screen_capm.py` | CAPM pool screen over a JSON watch pool (`pool_example.json`), FMP → yfinance fallback |
+| `framework/portfolio_sync.py` | Refresh `positions.json` prices / values + hard-limit breach check |
+| `framework/stress_test.py` | Three-scenario portfolio stress test with drawdown-protocol readout |
+| `framework/fmp_client.py` | Financial Modeling Prep `/stable/` client + CLI; shared `FMP_API_KEY` loader |
+| `framework/config.py` | Path / language resolution (`config.example.toml`, `BT_*` env vars) |
+| `portfolio_structure/positions.example.json` | Machine-readable portfolio schema with two FAKE positions (demo input for the three scripts above) |
+
+Operations scripts read `positions.json` via `BT_POSITIONS_PATH` → `<investment_dir>/positions.json` → the bundled example.
+FMP key: `export FMP_API_KEY=...` (or `FMP_API_KEY=...` in `$BT_CONFIG_DIR/fmp.env`); the yfinance paths need no key.
+Extra deps: `pandas` + `yfinance` for `backtest_runner.py` / `portfolio_sync.py`, `openpyxl` for `dcf_model_builder.py` (all optional — `--help` works without them).
 
 ### Quick Test
 ```bash
@@ -247,6 +264,20 @@ investment-framework/
 │   ├── decision_log.py                  # Append-only ledger
 │   ├── backtest_runner.py               # Multi-benchmark scorecard
 │   ├── futu_costs.py                    # Broker cost calculator
+│   ├── valuation_inputs.py              # V4.4 pre-flight inputs (FMP → yfinance)
+│   ├── wacc_calc.py                     # CAPM WACC
+│   ├── dcf_model_builder.py             # Live Excel DCF builder
+│   ├── forward_tracker.py               # Prediction lock + calibration
+│   ├── random_sample_backtest.py        # Random-sample backtest scaffold
+│   ├── pre_trade_gate.py                # BUY / SELL gate (C4 / C10)
+│   ├── kelly_lite.py                    # Quarter-Kelly sizing
+│   ├── pool_screen_capm.py              # CAPM pool screen
+│   ├── pool_example.json                # Generic example watch pool
+│   ├── portfolio_sync.py                # positions.json refresh + breach check
+│   ├── stress_test.py                   # Scenario stress test
+│   ├── fmp_client.py                    # FMP API client + key loader
+│   ├── config.py                        # Path / language resolution
+│   ├── SPEC.md                          # Canonical framework contract
 │   ├── excel_input_template.json        # ACCT6111E input mapping
 │   └── v42_advanced_report_template.md  # 17-section report format
 ├── skills/
@@ -258,7 +289,9 @@ investment-framework/
 │   ├── case_studies/                    # Anonymized lessons (FISV, paper drills, backtest)
 │   └── templates/                       # Decision log, post-mortem, thesis journal
 └── portfolio_structure/
-    └── portfolio.md                     # Empty template
+    ├── portfolio.md                     # Empty template
+    ├── positions.example.json           # FAKE machine-readable portfolio state
+    └── thesis_tracker_template.md       # Falsifiable thesis scorecard
 ```
 
 ---
@@ -311,6 +344,6 @@ MIT — adapt freely for your own investing workflow.
 
 ---
 
-**Last updated**: 2026-05-08
-**Framework version**: V4.2 hardened (production stable)
-**Pending**: V5 release (PR-1 review in progress on private collab repo)
+**Last updated**: 2026-10-20
+**Framework version**: V5.2.0 (V4.9 operations layer + 2026-10 accounting fixes)
+**Pending**: V5.0 GA — random-sample backtest execution; skills still at v4.3 anonymized versions

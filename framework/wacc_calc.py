@@ -31,10 +31,12 @@ Usage:
 import sys, json, subprocess, argparse
 from pathlib import Path
 
+from fmp_client import load_api_key
+
 
 def get_fmp_raw(endpoint, ticker, **params):
     """Direct FMP curl wrapper."""
-    api_key = open(Path.home() / ".config" / "boris-investment" / "fmp.env").read().split("=", 1)[1].strip()
+    api_key = load_api_key()  # FMP_API_KEY env var or $BT_CONFIG_DIR/fmp.env (see fmp_client.py)
     base = "https://financialmodelingprep.com/stable"
     qs_parts = [f"symbol={ticker.upper()}"]
     for k, v in params.items():
@@ -85,7 +87,10 @@ def calc_wacc(ticker, rf=0.043, erp=0.055, country_premium=0.0, debt_premium=0.0
     op_leases = b.get("capitalLeaseObligations", 0)
     cash_st = b.get("cashAndCashEquivalents", 0) + b.get("shortTermInvestments", 0)
     # V4.4: Adjusted Net Debt incl op leases
-    adj_net_debt = total_debt + op_leases - cash_st
+    # 2026-10-07 fix: FMP totalDebt already includes capitalLeaseObligations → add leases only if evidently not in it
+    funded = (b.get("shortTermDebt") or 0) + (b.get("longTermDebt") or 0)
+    leases_in_debt = abs(total_debt - (funded + op_leases)) < abs(total_debt - funded)
+    adj_net_debt = total_debt + (0 if leases_in_debt else op_leases) - cash_st
 
     # Effective tax rate
     tax_burden = k.get("taxBurdenTTM", 0.79)  # default 21%
@@ -120,6 +125,7 @@ def calc_wacc(ticker, rf=0.043, erp=0.055, country_premium=0.0, debt_premium=0.0
             "market_cap": market_cap,
             "total_debt": total_debt,
             "operating_leases": op_leases,
+            "leases_in_total_debt": leases_in_debt,
             "cash_and_st_investments": cash_st,
             "adjusted_net_debt": adj_net_debt,
             "effective_tax_rate": effective_tax,
@@ -144,10 +150,10 @@ def calc_wacc(ticker, rf=0.043, erp=0.055, country_premium=0.0, debt_premium=0.0
 def main():
     parser = argparse.ArgumentParser(description="V4.4 WACC Calculator (CAPM)")
     parser.add_argument("ticker")
-    parser.add_argument("--rf", type=float, default=0.043, help="Risk-free rate (default 4.3%)")
-    parser.add_argument("--erp", type=float, default=0.055, help="Equity risk premium (default 5.5%)")
+    parser.add_argument("--rf", type=float, default=0.043, help="Risk-free rate (default 4.3%%)")
+    parser.add_argument("--erp", type=float, default=0.055, help="Equity risk premium (default 5.5%%)")
     parser.add_argument("--country-premium", type=float, default=0.0, help="Country risk premium for EM (e.g. 0.03 for Brazil)")
-    parser.add_argument("--debt-premium", type=float, default=0.015, help="Corporate debt spread over Rf (default 1.5%)")
+    parser.add_argument("--debt-premium", type=float, default=0.015, help="Corporate debt spread over Rf (default 1.5%%)")
     args = parser.parse_args()
     calc_wacc(args.ticker, args.rf, args.erp, args.country_premium, args.debt_premium)
 

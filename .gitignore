@@ -5,6 +5,10 @@ Thumbs.db
 # Actual portfolio data (NEVER commit real holdings)
 portfolio.md
 !portfolio_structure/portfolio.md
+positions.json
+!portfolio_structure/positions.example.json
+data/
+models/
 
 # Personal research reports
 research/*

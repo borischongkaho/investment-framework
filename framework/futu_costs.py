@@ -128,6 +128,9 @@ def calc_round_trip_cost(
 
 # --- CLI ---
 def main():
+    if any(a in ("-h", "--help") for a in sys.argv[1:]):
+        print(__doc__.strip())
+        return
     if len(sys.argv) == 4:
         side = sys.argv[1].upper()
         shares = int(sys.argv[2])

@@ -11,24 +11,37 @@ Each decision captures:
 
 Auto-enriched after 1Y / 2Y / 3Y with realized alpha + reflection prompt.
 
-Storage: ~/Developer/investment/decision_log/decisions.json (single source of truth)
+Storage: <investment_dir>/decision_log/decisions.json (single source of truth)
+         resolved via BT_DECISIONS_PATH env var, else config.py (default ./data/decision_log/decisions.json)
 
 Usage:
     python3 decision_log.py list
     python3 decision_log.py add < decision.json
     python3 decision_log.py mark-exit TICKER YYYY-MM-DD PRICE
     python3 decision_log.py enrich          # re-fetch realized returns
-    python3 decision_log.py seed            # bootstrap from portfolio.md known data
+    python3 decision_log.py seed            # write the EXAMPLE decisions (edit seed_from_portfolio() first)
 """
 
 import argparse
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
 
-HOME = Path.home()
-DECISIONS_PATH = HOME / "Developer" / "investment" / "decision_log" / "decisions.json"
+
+def _resolve_decisions_path() -> Path:
+    override = os.environ.get("BT_DECISIONS_PATH")
+    if override:
+        return Path(override).expanduser()
+    try:
+        from config import load as load_config
+        return load_config().decisions_path
+    except Exception:
+        return Path(__file__).resolve().parent.parent / "data" / "decision_log" / "decisions.json"
+
+
+DECISIONS_PATH = _resolve_decisions_path()
 
 
 def load_decisions() -> list:
@@ -127,103 +140,44 @@ def list_decisions():
 
 def seed_from_portfolio():
     """
-    Bootstrap from known portfolio.md data.
+    Bootstrap the ledger with EXAMPLE decisions (fake data — edit before use).
     Entry dates marked 'estimated' need user confirmation before backtest is reliable.
     """
+    # EXAMPLE seed — FAKE, round-number positions for demonstration only.
+    # Replace with your own history, or skip `seed` entirely and use `add` with your real decisions.
     seed_data = [
-        # Active US equity holdings
         {
-            "ticker": "NVDA", "action": "BUY",
-            "entry_date": "2024-11-01",  # ESTIMATED — user to confirm
-            "entry_price": 118.44, "shares": 108,
-            "intrinsic_value": 163, "expected_return": 0.40,
+            "ticker": "AAPL", "action": "BUY",
+            "entry_date": "2025-01-15",
+            "entry_price": 180.00, "shares": 48,
+            "intrinsic_value": 230, "expected_return": 0.28,
             "sector": "tech", "asset_class": "equity",
-            "thesis_tag": "AI infrastructure leader, CUDA moat",
-            "thesis_summary": "AI compute leader, CUDA ecosystem lock-in, fabless 100% ROIC",
-            "horizon_years": 5,
-            "data_quality": "entry_date_estimated",
-        },
-        {
-            "ticker": "WEX", "action": "BUY",
-            "entry_date": "2026-05-04",
-            "entry_price": 152.57, "shares": 65,
-            "intrinsic_value": 200, "expected_return": 0.30,
-            "sector": "financials", "asset_class": "equity",
-            "thesis_tag": "Mid-cap fleet card + EV transition",
-            "thesis_summary": "EV transition fear mispriced; Q1 confirms thesis",
+            "thesis_tag": "Example — ecosystem moat, services mix shift",
+            "thesis_summary": "Illustrative entry; replace with your own thesis",
             "horizon_years": 5,
             "data_quality": "confirmed",
         },
         {
-            "ticker": "GIS", "action": "BUY",
-            "entry_date": "2026-05-04",
-            "entry_price": 34.62, "shares": 100,
-            "sector": "consumer_staples", "asset_class": "equity",
-            "thesis_tag": "Consumer staples value",
+            "ticker": "MSFT", "action": "BUY",
+            "entry_date": "2025-06-01",  # ESTIMATED — user to confirm
+            "entry_price": 400.00, "shares": 20,
+            "intrinsic_value": 520, "expected_return": 0.30,
+            "sector": "tech", "asset_class": "equity",
+            "thesis_tag": "Example — cloud + AI platform",
+            "horizon_years": 5,
+            "data_quality": "entry_date_estimated",
+        },
+        # Closed position (exercises the post-mortem / realized_return path)
+        {
+            "ticker": "XOM", "action": "BUY",
+            "entry_date": "2024-03-01",
+            "entry_price": 100.00, "shares": 50,
+            "exit_date": "2025-03-01", "exit_price": 110.00, "status": "CLOSED",
+            "realized_return": (110.00 - 100.00) / 100.00,
+            "sector": "energy", "asset_class": "equity",
+            "thesis_tag": "Example — closed at pre-committed trigger",
             "horizon_years": 5,
             "data_quality": "confirmed",
-        },
-        # Crypto
-        {
-            "ticker": "BTC-USD", "action": "BUY",
-            "entry_date": "2024-01-15",  # ESTIMATED
-            "entry_price": 53382.32, "shares": 0.23649861,
-            "sector": "crypto", "asset_class": "crypto",
-            "thesis_tag": "Digital gold, macro hedge",
-            "horizon_years": 7,
-            "data_quality": "entry_date_estimated",
-        },
-        {
-            "ticker": "ETH-USD", "action": "BUY",
-            "entry_date": "2024-03-01",  # ESTIMATED — known underwater from prior cycle
-            "entry_price": 3288.50, "shares": 5.5170138,
-            "sector": "crypto", "asset_class": "crypto",
-            "thesis_tag": "Programmable L1, DeFi infra",
-            "horizon_years": 5,
-            "data_quality": "entry_date_estimated",
-        },
-        {
-            "ticker": "BNB-USD", "action": "BUY",
-            "entry_date": "2024-06-01",  # ESTIMATED
-            "entry_price": 342.91, "shares": 0.681,
-            "sector": "crypto", "asset_class": "crypto",
-            "thesis_tag": "Binance ecosystem token (small position)",
-            "horizon_years": 3,
-            "data_quality": "entry_date_estimated",
-        },
-        # Closed positions (post-mortem)
-        {
-            "ticker": "FISV", "action": "BUY",
-            "entry_date": "2026-04-14",
-            "entry_price": 58.86, "shares": 235,
-            "exit_date": "2026-05-04", "exit_price": 63.00, "status": "CLOSED",
-            "realized_return": (63.00 - 58.86) / 58.86,
-            "sector": "financials", "asset_class": "equity",
-            "thesis_tag": "Payments platform — V2.0 trim trigger validated",
-            "horizon_years": 5,
-            "data_quality": "confirmed",
-        },
-        {
-            "ticker": "NVO", "action": "BUY",
-            "entry_date": "2024-12-01",  # ESTIMATED
-            "entry_price": 39.20, "shares": 229,
-            "exit_date": "2026-04-10", "exit_price": 37.76, "status": "CLOSED",
-            "realized_return": (37.76 - 39.20) / 39.20,
-            "sector": "healthcare", "asset_class": "equity",
-            "thesis_tag": "GLP-1 leader — thesis broken (CagriSema + Lilly)",
-            "horizon_years": 5,
-            "data_quality": "entry_date_estimated",
-        },
-        {
-            "ticker": "BMY", "action": "BUY",
-            "entry_date": "2024-12-01",  # ESTIMATED
-            "entry_price": 58.90, "shares": 85,
-            "exit_date": "2026-04-10", "exit_price": 58.62, "status": "CLOSED",
-            "realized_return": (58.62 - 58.90) / 58.90,
-            "sector": "healthcare", "asset_class": "equity",
-            "thesis_tag": "Pharma value — patent cliff catch failed",
-            "horizon_years": 5,
-            "data_quality": "entry_date_estimated",
         },
     ]
 

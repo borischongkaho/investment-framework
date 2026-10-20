@@ -4,6 +4,78 @@
 
 ---
 
+## v5.2.0 — V4.9 operations layer + accounting fixes (2026-10-20)
+
+> **Status**: Additive. Folds the private-layer V4.7 → V4.9 operations scripts (June–Oct 2026) into the
+> public framework, plus the 2026-10-07 accounting corrections. All prior calls remain compatible.
+> Every script in `framework/` now answers `--help` from a fresh clone without optional deps.
+
+### New scripts (V4.7–V4.9 operations layer)
+- ✅ `framework/pre_trade_gate.py` — **mandatory gate before any BUY (Rule C4) or SELL (Rule C10)**.
+  BUY checks: MoS hard gate / watch band, smart-money premium, single-stock cap, cash reserve,
+  AI-correlated cap, monthly patience quota, net-of-withholding dividend yield. SELL checks: thesis status,
+  pre-committed trigger, panic-sell pattern, soft holding-period floor, post-sell protocol.
+  Exit 0 = PASS, 1 = override acknowledged (must be logged), 2 = FAIL.
+- ✅ `framework/kelly_lite.py` — quarter-Kelly position-sizing reference (`kelly_size()` pure function + CLI),
+  always capped by the single-stock rule; sizing aid only, never overrides the cap rules.
+- ✅ `framework/pool_screen_capm.py` — one-shot CAPM-WACC + Owner-FCF two-stage DCF screen over a watch pool.
+  Pool comes from a JSON file (`--pool`, bundled generic example `framework/pool_example.json`);
+  `--tickers DECK:6,LULU:5 [--g 6] [--with-pool]` for ad-hoc names; FMP with 12-hour on-disk cache
+  (`$BT_CACHE_DIR`, default `~/.cache/boris-investment/fmp_cache`), auto-falls back to yfinance on 429.
+- ✅ `framework/portfolio_sync.py` — refresh prices / values / P&L in `positions.json` via yfinance and run
+  the hard-limit breach check (A1 / A2 / B1 / A4). Never writes back into the bundled example file.
+- ✅ `framework/stress_test.py` — monthly three-scenario stress test (2022-style AI correction, 2008-style
+  recession, stagflation) with drawdown-protocol trigger readout; `run_scenarios()` is pure for testing.
+- ✅ `framework/fmp_client.py` — Financial Modeling Prep `/stable/` client + CLI (profile, statements,
+  ratios, DCF, owner earnings, estimates, insider, filings, screener …). Single shared key loader:
+  `FMP_API_KEY` env var first, then `$BT_CONFIG_DIR/fmp.env`.
+- ✅ `portfolio_structure/positions.example.json` — machine-readable portfolio state schema with two FAKE
+  positions; the operations scripts run against it out of the box. Resolution order for the real file:
+  `BT_POSITIONS_PATH` → `<investment_dir>/positions.json` → bundled example (see `config.resolve_positions_path()`).
+
+### Accounting fix — operating leases were double-counted (2026-10-07)
+- 🐛 V4.4 computed `Adjusted Net Debt = totalDebt + capitalLeaseObligations − cash`. FMP's `totalDebt`
+  (and yfinance's `Total Debt`) **already includes** lease liabilities (verified across AAPL / MSFT / NVDA /
+  GOOGL / COST / AMZN), so lease-heavy names carried inflated net debt and depressed IV.
+- ✅ `valuation_inputs.py`, `wacc_calc.py` and `pool_screen_capm.py` now add leases **only when they are
+  evidently not inside totalDebt** (`|totalDebt − (funded + leases)| < |totalDebt − funded|` ⇒ included).
+  New output field `leases_in_total_debt` makes the decision auditable. Covered by tests for both branches.
+
+### Data source — FMP free tier → yfinance fallback
+- ✅ `valuation_inputs.py --source auto|fmp|yf`: when FMP has no financials for a ticker (premium /
+  restricted / unknown), falls back to yfinance mapped onto FMP field names so every V4.4 derivation runs
+  unchanged. Output carries `data_source`, `source_notes` (what yfinance cannot supply: ROIC, FMP owner
+  earnings, FMP DCF …) and `fmp_unavailable` (per-endpoint reason). Exit code 2 + `"error"` when no source
+  has data. `pool_screen_capm.py --source` has the same switch.
+
+### Python 3.14 compatibility
+- ✅ `wacc_calc.py` argparse help strings escape `%` as `%%` (3.14 raises on bare `%` in help text).
+- ✅ `valuation_inputs.py` f-strings no longer use the invalid `\$` escape (SyntaxWarning on 3.12+).
+- ✅ `backtest_runner.py` / `dcf_model_builder.py` guard their heavy imports (yfinance, pandas, openpyxl) so
+  `--help` works without them; `data_quality_gate.py`, `futu_costs.py`, `valuation_calc.py` gained `--help`.
+
+### Path / config hygiene (public layer)
+- ✅ `config.py` (public multi-user version kept) gains `decisions_path`, `scorecard_path`, `positions_path`,
+  `models_dir` and `resolve_positions_path()`. `decision_log.py`, `backtest_runner.py` and
+  `dcf_model_builder.py` resolve their storage through it (env overrides `BT_DECISIONS_PATH`, `BT_MODELS_DIR`)
+  instead of a hard-coded home-relative directory.
+- ✅ `decision_log.py seed` now writes three clearly-labelled EXAMPLE decisions instead of an author-specific
+  ledger.
+- ✅ `.gitignore` adds `positions.json`, `data/`, `models/`.
+
+### Tests
+- `tests/test_v52_sync.py` (NEW): lease rule both branches (inputs + WACC + pool screen), yfinance fallback
+  error path, BUY / SELL gate exit codes, Kelly sizing (cap + negative edge), stress scenarios, decision-log
+  seed isolation, FMP key resolution, `--help` on every `framework/*.py`, and a privacy guard that fails if
+  any framework / example file mentions a home path or personal identity. Suite: 33 → 84 tests, all green.
+
+### Skills
+- ⚠️ `skills/` remain the **v4.3 anonymized versions**. The canonical latest skills (invest-source /
+  invest-screen / mba-valuation / invest-portfolio V4.7+) live in the private layer and are not part of
+  this sync.
+
+---
+
 ## v5.1.0-alpha — V4.4 Accounting Hardening + V2.1 Reporting (2026-05-28)
 
 > **Status**: Additive to v5.0.0-alpha. All prior calls remain compatible. Folds the V4.4

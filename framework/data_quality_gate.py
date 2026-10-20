@@ -299,6 +299,9 @@ def run_gate(data: dict) -> dict:
 # -----------------------------------------------------------------------------
 
 def main():
+    if any(a in ("-h", "--help") for a in sys.argv[1:]):
+        print(__doc__.strip())
+        return
     if len(sys.argv) < 2:
         print(__doc__)
         sys.exit(1)
